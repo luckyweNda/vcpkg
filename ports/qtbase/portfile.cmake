@@ -19,6 +19,7 @@ set(${PORT}_PATCHES
         GLIB2-static.patch # alternative is to force pkg-config
         clang-cl_source_location.patch
         clang-cl_QGADGET_fix.diff
+        CVE-2023-43114-6.5.patch
         )
 
 if(VCPKG_TARGET_IS_WINDOWS AND NOT VCPKG_TARGET_IS_MINGW)
@@ -469,4 +470,19 @@ endif()
 
 if(VCPKG_CROSSCOMPILING)
     vcpkg_replace_string("${CURRENT_PACKAGES_DIR}/share/Qt6/Qt6Dependencies.cmake" "${CURRENT_HOST_INSTALLED_DIR}" "\${CMAKE_CURRENT_LIST_DIR}/../../../${HOST_TRIPLET}")
+endif()
+
+function(remove_original_cmake_path file)
+    file(READ "${file}" _contents)
+    string(REGEX REPLACE "original_cmake_path=[^\n]*" "original_cmake_path=''" _contents "${_contents}")
+    file(WRITE "${file}" "${_contents}")
+endfunction()
+
+if(NOT VCPKG_TARGET_IS_WINDOWS)
+    foreach(file "qt-cmake" "qt-cmake-private")
+        remove_original_cmake_path("${CURRENT_PACKAGES_DIR}/tools/Qt6/bin/${file}")
+        if(NOT VCPKG_BUILD_TYPE)
+            remove_original_cmake_path("${CURRENT_PACKAGES_DIR}/tools/Qt6/bin/debug/${file}")
+        endif()
+    endforeach()
 endif()
